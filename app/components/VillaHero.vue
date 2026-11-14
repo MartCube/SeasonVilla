@@ -14,7 +14,8 @@ const startFilm = () => {
   const v = video.value
   const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData
   if (!v || v.src || saveData || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  v.src = props.villa.hero.video
+  // the preview build runs from relative paths
+  v.src = useRuntimeConfig().public.preview ? props.villa.hero.video.slice(1) : props.villa.hero.video
   v.play().catch(() => {})
 }
 onMounted(() => { if (ready.value) startFilm() })

@@ -1,5 +1,9 @@
 import { villas } from './villas'
 
+// `npm run preview:static` sets this: a build with relative paths and hash links
+// that runs from any folder or share link, for showing the site before it is deployed.
+const preview = process.env.VILLA_PREVIEW === '1'
+
 // One template, many villas. Content lives in /villas, media in /public/media.
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
@@ -15,12 +19,17 @@ export default defineNuxtConfig({
   image: {
     // Locally and in `nuxt generate` images are optimized by IPX.
     // On Netlify the module switches to the Netlify Image CDN by itself.
-    format: ['avif', 'webp'],
+    format: preview ? ['webp'] : ['avif', 'webp'],
+    ...(preview ? { provider: 'preview', providers: { preview: { provider: '~/providers/preview.ts' } } } : {}),
     quality: 72,
     // Four widths per picture; the browser picks the right one for the screen.
     screens: { sm: 640, md: 1024, lg: 1600, xl: 2200 }
   },
+  // hash links need the page to be drawn in the browser
+  ...(preview ? { ssr: false, router: { options: { hashMode: true } } } : {}),
+  runtimeConfig: { public: { preview } },
   app: {
+    ...(preview ? { cdnURL: './', buildAssetsDir: '/static/' } : {}),
     head: {
       htmlAttrs: { lang: 'en' },
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }],
@@ -29,6 +38,6 @@ export default defineNuxtConfig({
     }
   },
   nitro: {
-    prerender: { routes: ['/', ...villas.slice(1).map(v => '/' + v.slug)] }
+    prerender: { routes: preview ? ['/'] : ['/', ...villas.slice(1).map(v => '/' + v.slug)] }
   }
 })
